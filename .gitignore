@@ -1,0 +1,7 @@
+node_modules/
+dist/
+_arsiv/
+.vercel/
+.DS_Store
+Thumbs.db
+*.log
