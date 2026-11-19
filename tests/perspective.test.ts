@@ -42,3 +42,13 @@ describe('team coordinates', () => {
     expect(home.py + away.py).toBeCloseTo(HALFWAY * 2);
   });
 });
+
+describe('full pitch inset', () => {
+  it('pulls both teams back from the halfway line so forwards do not collide', () => {
+    const fw = { x: 50, y: 15 };
+    const gap = (inset: number) => teamToPitch(fw, 'home', inset).py - teamToPitch(fw, 'away', inset).py;
+    expect(gap(14)).toBeGreaterThan(gap(0));
+    // kalecinin yeri neredeyse değişmez
+    expect(teamToPitch({ x: 50, y: 89 }, 'home', 14).py).toBeCloseTo(teamToPitch({ x: 50, y: 89 }, 'home', 0).py, -1);
+  });
+});

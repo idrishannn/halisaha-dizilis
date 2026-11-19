@@ -41,7 +41,7 @@ export default function PerspectivePitch({ view, teams, showNames, overlay }: Pr
     .flatMap((team) =>
       team.slots.map((slot, i) => {
         const player = team.players[i];
-        const { px, py } = teamToPitch(slot, team.side);
+        const { px, py } = teamToPitch(slot, team.side, view === 'full' ? 14 : 0);
         return { team, slot, player, px, py, isGK: slot.role === 'KL' };
       }),
     )

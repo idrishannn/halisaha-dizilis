@@ -113,13 +113,15 @@ export function arc(cam: Camera, cx: number, cy: number, r: number, a0 = 0, a1 =
  * Takım koordinatını (kendi yarı sahasında yüzde) saha birimine çevirir.
  * Ev sahibi alt yarıda; rakip üst yarıda ve ayna simetrisiyle (kendi kalesi üstte).
  */
-export function teamToPitch(p: Point, side: 'home' | 'away'): { px: number; py: number } {
+export function teamToPitch(p: Point, side: 'home' | 'away', inset = 0): { px: number; py: number } {
   const usableW = LINES.right - LINES.left;
   const usableL = LINES.bottom - HALFWAY;
+  // inset: orta saha çizgisinden geri çekilme (yüzde). İki takım aynı sahadayken forvetler çakışmasın.
+  const depth = (inset + (p.y / 100) * (100 - inset)) / 100;
   if (side === 'home') {
-    return { px: LINES.left + (p.x / 100) * usableW, py: HALFWAY + (p.y / 100) * usableL };
+    return { px: LINES.left + (p.x / 100) * usableW, py: HALFWAY + depth * usableL };
   }
-  return { px: LINES.right - (p.x / 100) * usableW, py: HALFWAY - (p.y / 100) * usableL };
+  return { px: LINES.right - (p.x / 100) * usableW, py: HALFWAY - depth * usableL };
 }
 
 /** Projected noktayı viewBox içinde yüzdeye çevirir (HTML katmanı için). */

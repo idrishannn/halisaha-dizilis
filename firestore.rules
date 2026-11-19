@@ -1,0 +1,113 @@
+rules_version = '2';
+
+// Halı Saha Diziliş — Firestore güvenlik kuralları
+//
+// Model:
+//  - Herkes anonim olarak oturum açar (kayıt yok).
+//  - teams/{id}: takımı oluşturan cihaz yöneticidir (adminUid). Sadece o yazabilir.
+//    Belge sadece kadro isimlerini içerir; ID'yi bilen (maç linkini açan) okuyabilir, listelenemez.
+//  - matches/{id}: maç linki = belge ID'si (tahmin edilemez). Linki açan okuyabilir.
+//    Rakip, boş olan "away" tarafına bir kez katılabilir. Skoru sadece iki takımın yöneticisi girebilir.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+    function str(v, max) { return v is string && v.size() <= max; }
+    function adminOf(teamId) {
+      return get(/databases/$(database)/documents/teams/$(teamId)).data.adminUid;
+    }
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // ---------------- takımlar ----------------
+
+    function validTeam(d) {
+      return d.keys().hasOnly(['adminUid', 'name', 'kit', 'size', 'formation', 'players',
+                               'overrides', 'captain', 'showNames', 'createdAt', 'updatedAt'])
+        && d.keys().hasAll(['adminUid', 'name', 'kit', 'size', 'formation', 'players'])
+        && str(d.name, 24) && d.name.size() > 0
+        && str(d.kit, 16)
+        && d.size in [6, 7, 8]
+        && str(d.formation, 10)
+        && d.players is list && d.players.size() <= 8
+        && (!('overrides' in d) || d.overrides is map)
+        && (!('captain' in d) || d.captain == null || d.captain is int)
+        && (!('showNames' in d) || d.showNames is bool);
+    }
+
+    match /teams/{teamId} {
+      allow get: if signedIn();
+      // sadece kendi takımını sorgulayabilir
+      allow list: if signedIn() && resource.data.adminUid == me();
+      allow create: if signedIn()
+        && request.resource.data.adminUid == me()
+        && validTeam(request.resource.data);
+      allow update: if signedIn()
+        && resource.data.adminUid == me()
+        && request.resource.data.adminUid == me()
+        && validTeam(request.resource.data);
+      allow delete: if signedIn() && resource.data.adminUid == me();
+    }
+
+    // ---------------- maçlar ----------------
+
+    function validSide(s) {
+      return s.keys().hasOnly(['teamId', 'name', 'kit'])
+        && s.teamId is string && str(s.name, 24) && str(s.kit, 16);
+    }
+
+    function validScore(s) {
+      return s == null || (
+        s.keys().hasOnly(['home', 'away', 'by', 'byUid', 'at'])
+        && s.home is int && s.home >= 0 && s.home <= 99
+        && s.away is int && s.away >= 0 && s.away <= 99
+        && s.byUid == me() && str(s.by, 24)
+        && s.at == request.time
+      );
+    }
+
+    match /matches/{matchId} {
+      // link = belge ID'si; linki bilen okur
+      allow get: if signedIn();
+      // listede sadece taraf olduğu maçlar
+      allow list: if signedIn() && me() in resource.data.members;
+
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['createdBy', 'createdAt', 'members', 'home', 'away', 'place', 'time', 'score'])
+        && request.resource.data.createdBy == me()
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.members == [me()]
+        && request.resource.data.away == null
+        && request.resource.data.score == null
+        && validSide(request.resource.data.home)
+        && adminOf(request.resource.data.home.teamId) == me()
+        && str(request.resource.data.place, 60)
+        && str(request.resource.data.time, 60);
+
+      // rakip katılıyor: boş tarafı kendi takımıyla doldurur ve üyelere eklenir
+      allow update: if signedIn()
+        && resource.data.away == null
+        && !(me() in resource.data.members)
+        && changedKeys().hasOnly(['away', 'members'])
+        && request.resource.data.away != null
+        && validSide(request.resource.data.away)
+        && request.resource.data.away.teamId != resource.data.home.teamId
+        && adminOf(request.resource.data.away.teamId) == me()
+        && request.resource.data.members == resource.data.members.concat([me()]);
+
+      // taraflar: skor, yer ve saat
+      allow update: if signedIn()
+        && me() in resource.data.members
+        && changedKeys().hasOnly(['score', 'place', 'time'])
+        && validScore(request.resource.data.score)
+        && str(request.resource.data.place, 60)
+        && str(request.resource.data.time, 60);
+
+      // rakip katılmadıysa kuran silebilir
+      allow delete: if signedIn() && resource.data.createdBy == me() && resource.data.away == null;
+    }
+  }
+}

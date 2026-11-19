@@ -50,13 +50,22 @@ npm run dev          # http://localhost:5173
 ```bash
 npm test             # birim testleri (vitest)
 npm run typecheck    # TypeScript kontrolü
+npm run test:rules   # Firestore güvenlik kuralı testleri (emülatörde, Java gerekir)
+```
+
+Yerel geliştirmede gerçek veritabanına dokunmadan çalışmak için:
+
+```bash
+npm run emulators    # 1. terminal: Auth + Firestore emülatörleri
+npm run dev:emu      # 2. terminal: uygulama emülatörlere bağlı açılır
 npm run build        # üretim derlemesi -> dist/
 ```
 
 ### Yayınlama
 
-Statik bir sitedir; `dist/` klasörü herhangi bir statik barındırmada çalışır.
-Vercel: depoyu içe aktar → Framework: **Vite** → Deploy.
+Firebase Hosting: `main`'e her push'ta GitHub Actions testleri çalıştırır ve siteyi yayına alır
+(https://halisaha-dizilis.web.app). Her PR için ayrı bir önizleme linki oluşur.
+Güvenlik kuralları ve indeksler: `firebase deploy --only firestore`.
 
 ## Proje yapısı
 
