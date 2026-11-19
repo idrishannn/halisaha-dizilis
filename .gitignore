@@ -5,3 +5,5 @@ _arsiv/
 .DS_Store
 Thumbs.db
 *.log
+.firebase/
+*-debug.log
