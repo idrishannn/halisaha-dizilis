@@ -18,6 +18,8 @@ export const defaultState = () => ({
   overrides: {}, // { "8:3-3-1": { 3: {x, y} } } elle sürüklenen konumlar
   match: { title: 'Halı Saha Maçı', place: '', time: '' },
   showNames: true,
+  kit: 'emerald',
+  captain: null, // kaptanın oyuncu id'si
 });
 
 /** Diziliş konumlarını, kullanıcının sürüklediği konumlarla birleştirir. */
@@ -53,6 +55,14 @@ export function setSize(state, size) {
 export function setFormation(state, formation) {
   if (!TEAM_SIZES[state.size][formation]) return state;
   return { ...state, formation };
+}
+
+/** İki kadro yuvasındaki oyuncuları yer değiştirir (konumlar yuvada kalır). */
+export function swapPlayers(state, a, b) {
+  if (a === b || !state.players[a] || !state.players[b]) return state;
+  const players = [...state.players];
+  [players[a], players[b]] = [players[b], players[a]];
+  return { ...state, players };
 }
 
 export function updatePlayer(state, id, patch) {

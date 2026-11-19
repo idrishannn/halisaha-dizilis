@@ -25,7 +25,11 @@ bir dakikada kurulur ve **gruba atılmaya hazır, temiz bir görüntü** olarak 
 ## Özellikler
 
 - 🧩 **6'lı, 7'li ve 8'li** kadrolar, her biri için 3 hazır diziliş
-- ✋ **Sürükle-bırak:** oyuncuları sahada istediğin yere taşı (fare ve dokunmatik), konum diziliş başına hatırlanır
+- ✋ **Sürükle-bırak:** oyuncu kaldırınca büyür, gölgesi yerden ayrılır, gidiş yönüne eğilir; bırakınca yaylı bir hareketle oturur (fare, dokunmatik ve ok tuşları). Konum diziliş başına hatırlanır
+- 🔁 **Yer değiştirme:** bir oyuncuyu diğerinin üstüne bırak, yerleri değişsin; yedek kulübesinden sahaya sürükleyerek oyuncu değiştir
+- 🧲 **Mıknatıslı yerleşim:** dizilişin varsayılan noktasına yaklaşınca oyuncu oraya oturur; sürüklerken rota ve hizalama çizgileri görünür
+- ↩️ **Geri al:** taşıma, değişiklik ve diziliş değişiklikleri geri alınabilir (Ctrl+Z)
+- 👕 **Forma rengi ve kaptan:** 7 forma rengi, kaptan bandı
 - 📸 **Oyuncu fotoğrafı:** fotoğraflar kare kırpılıp 256 px WebP'ye küçültülür (3-5 MB'lık telefon fotoğrafı → ~15 KB)
 - 📝 **Maç bilgisi:** başlık, saha, gün/saat görüntünün üstünde yer alır
 - 📤 **Paylaş:** telefonda yerel paylaşım menüsü (WhatsApp, Telegram, Instagram…), desteklenmeyen tarayıcıda otomatik PNG indirme

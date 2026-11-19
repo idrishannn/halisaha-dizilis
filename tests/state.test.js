@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { TEAM_SIZES } from '../src/formations.js';
 import {
   STORAGE_KEY, defaultState, loadState, movePlayer, positionsFor,
-  resetPositions, saveState, setFormation, setSize, updatePlayer,
+  resetPositions, saveState, setFormation, setSize, swapPlayers, updatePlayer,
 } from '../src/state.js';
 
 const memoryStorage = (init = {}) => {
@@ -50,6 +50,16 @@ describe('state', () => {
     const s = setSize(defaultState(), 6);
     expect(positionsFor(s)).toHaveLength(6);
     expect(setSize(s, 11)).toBe(s);
+  });
+
+  it('swaps two players while slots keep their positions', () => {
+    const base = movePlayer(defaultState(), 2, 30, 30);
+    const s = swapPlayers(base, 2, 6);
+    expect(s.players[2].id).toBe(7);
+    expect(s.players[6].id).toBe(3);
+    expect(positionsFor(s)[2]).toMatchObject({ x: 30, y: 30 });
+    expect(swapPlayers(s, 1, 1)).toBe(s);
+    expect(swapPlayers(s, 1, 99)).toBe(s);
   });
 
   it('updates a single player', () => {
