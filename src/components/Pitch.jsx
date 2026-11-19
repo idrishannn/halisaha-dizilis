@@ -6,7 +6,7 @@ import { usePointerDrag } from '../hooks/usePointerDrag.js';
  * Dikey saha kartı: üstte yayın tarzı skor tabelası, ortada çim, altta imza.
  * Dışa aktarılan görüntü tam olarak bu düğümdür; `export-hide` sınıflı öğeler görüntüye girmez.
  */
-const Pitch = forwardRef(function Pitch({ match, meta, kit, fieldRef, overlay, children }, ref) {
+const Pitch = forwardRef(function Pitch({ match, meta, kit, fieldRef, overlay, children, flat = true }, ref) {
   return (
     <div
       ref={ref}
@@ -15,7 +15,7 @@ const Pitch = forwardRef(function Pitch({ match, meta, kit, fieldRef, overlay, c
       <Scoreboard match={match} meta={meta} kit={kit} />
 
       <div ref={fieldRef} className="turf relative aspect-[2/3] w-full touch-none select-none">
-        <FieldLines />
+        {flat && <FieldLines />}
         {overlay}
         {children}
       </div>

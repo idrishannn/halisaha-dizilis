@@ -52,6 +52,13 @@
     background-color: #1a7a3a;
   }
 
+  /* 3D görünümdeki dikey yakınlaştırma sürgüsü */
+  .zoom-slider {
+    writing-mode: vertical-lr;
+    direction: rtl;
+    accent-color: var(--accent);
+  }
+
   .no-scrollbar { scrollbar-width: none; }
   .no-scrollbar::-webkit-scrollbar { display: none; }
 }

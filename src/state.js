@@ -20,6 +20,7 @@ export const defaultState = () => ({
   showNames: true,
   kit: 'emerald',
   captain: null, // kaptanın oyuncu id'si
+  view: '2d', // '2d' | '3d'
 });
 
 /** Diziliş konumlarını, kullanıcının sürüklediği konumlarla birleştirir. */

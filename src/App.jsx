@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Component, Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { toBlob } from 'html-to-image';
 import {
-  ArrowLeftRight, CalendarClock, Camera, Crown, Download, Hand, ImagePlus, LayoutGrid,
+  ArrowLeftRight, Box, CalendarClock, Camera, Crown, Download, Hand, ImagePlus, LayoutGrid, Square,
   Loader2, MapPin, RotateCcw, Share2, Shirt, Tag, Trash2, Trophy, Undo2, Users, X,
 } from 'lucide-react';
 import Pitch, { DragGuides, PlayerToken, Ripples, initials } from './components/Pitch.jsx';
@@ -16,6 +16,9 @@ import {
   defaultState, loadState, movePlayer, positionsFor, resetPositions,
   saveState, setFormation, setSize, swapPlayers, updatePlayer,
 } from './state.js';
+
+// three.js yalnızca 3D görünüm açılınca indirilir
+const Pitch3D = lazy(() => import('./components/Pitch3D.jsx'));
 
 const storage = (() => {
   try {
@@ -130,11 +133,17 @@ export default function App() {
   };
 
   const moveDrag = (cx, cy) => {
-    const d = dragRef.current;
     const rect = fieldRef.current?.getBoundingClientRect();
-    if (!d || !rect) return;
+    if (!rect) return;
     const x = ((cx - rect.left) / rect.width) * 100;
     const y = ((cy - rect.top) / rect.height) * 100;
+    updateDrag(x, y, cx, cy, y > 100 || x < 0 || x > 100);
+  };
+
+  // x, y: saha yüzdesi; outside: işaretçi sahanın dışında mı (yedek kulübesine bırakma için)
+  const updateDrag = (x, y, cx, cy, outside) => {
+    const d = dragRef.current;
+    if (!d) return;
 
     let over = null;
     let best = SWAP_RADIUS;
@@ -143,7 +152,7 @@ export default function App() {
       const dist = Math.hypot(x - p.x, (y - p.y) * 1.5);
       if (dist < best) { best = dist; over = j; }
     });
-    if (over == null && d.kind === 'pitch' && (y > 100 || x < 0 || x > 100)) {
+    if (over == null && d.kind === 'pitch' && outside) {
       const hit = document.elementsFromPoint(cx, cy).find((el) => el.dataset?.benchSlot != null);
       if (hit) over = Number(hit.dataset.benchSlot);
     }
@@ -270,6 +279,8 @@ export default function App() {
 
   const editingPlayer = editing != null ? state.players[editing] : null;
   const editingRole = editing != null ? (editing < state.size ? positions[editing].role : 'YDK') : '';
+  const is3d = state.view === '3d';
+  const setView = (view) => setState((s) => ({ ...s, view }));
   const moved = Object.keys(state.overrides[`${state.size}:${state.formation}`] || {}).length > 0;
 
   const actions = (
@@ -324,15 +335,39 @@ export default function App() {
               match={state.match}
               meta={{ size: state.size, formation: state.formation }}
               kit={kit}
+              flat={!is3d}
               overlay={
-                <>
-                  <Ripples items={ripples} />
-                  <DragGuides drag={drag} kit={kit} />
-                  {hint && <DragHint />}
-                </>
+                is3d ? null : (
+                  <>
+                    <Ripples items={ripples} />
+                    <DragGuides drag={drag} kit={kit} />
+                    {hint && <DragHint />}
+                  </>
+                )
               }
             >
-              {lineup.map((p, i) => (
+              {is3d && (
+                <ThreeBoundary onError={() => { setView('2d'); notify('Bu cihaz 3D görünümü desteklemiyor; 2D görünüme dönüldü.'); }}>
+                  <Suspense fallback={<Loading3D />}>
+                    <Pitch3D
+                      lineup={lineup}
+                      positions={positions}
+                      kit={kit}
+                      gkKit={GK_KIT}
+                      captainId={state.captain}
+                      showNames={state.showNames}
+                      drag={drag}
+                      handlers={{
+                        onDragStart: startDrag('pitch'),
+                        onDragMove: updateDrag,
+                        onDragEnd: endDrag,
+                        onTap: setEditing,
+                      }}
+                    />
+                  </Suspense>
+                </ThreeBoundary>
+              )}
+              {!is3d && lineup.map((p, i) => (
                 <PlayerToken
                   key={p.id}
                   player={p}
@@ -359,6 +394,13 @@ export default function App() {
             {/* Saha araç çubuğu */}
             <div className="mt-3 flex items-center justify-between gap-2">
               <div className="glass flex items-center gap-0.5 rounded-2xl p-1">
+                <IconButton label="2D görünüm" active={!is3d} onClick={() => setView('2d')}>
+                  <Square size={15} /> <span className="text-xs font-bold">2D</span>
+                </IconButton>
+                <IconButton label="3D görünüm" active={is3d} onClick={() => { dismissHint(); setView('3d'); }}>
+                  <Box size={16} /> <span className="text-xs font-bold">3D</span>
+                </IconButton>
+                <span className="mx-1 h-5 w-px bg-white/10" />
                 <IconButton label="Geri al (Ctrl+Z)" onClick={undo} disabled={!canUndo}>
                   <Undo2 size={17} />
                 </IconButton>
@@ -374,7 +416,7 @@ export default function App() {
                   <Tag size={16} />
                 </IconButton>
               </div>
-              <p className="text-right text-[11px] leading-snug text-zinc-500">
+              <p className="hidden text-right text-[11px] leading-snug text-zinc-500 sm:block">
                 <span className="text-zinc-300">Sürükle</span> taşı · <span className="text-zinc-300">üstüne bırak</span> değiştir
                 <br />
                 <span className="text-zinc-300">Dokun</span> düzenle
@@ -511,6 +553,23 @@ export default function App() {
       </Sheet>
 
       <Toast toast={toast} onClose={() => setToast(null)} />
+    </div>
+  );
+}
+
+/** WebGL açılamazsa (eski cihaz, kapalı donanım hızlandırma) 2D'ye geri döner. */
+class ThreeBoundary extends Component {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch() { this.props.onError?.(); }
+  render() { return this.state.failed ? null : this.props.children; }
+}
+
+function Loading3D() {
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-ink-900 text-sm text-white/70">
+      <Loader2 className="animate-spin" style={{ color: 'var(--accent)' }} />
+      3D saha hazırlanıyor…
     </div>
   );
 }

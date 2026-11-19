@@ -24,6 +24,7 @@ bir dakikada kurulur ve **gruba atılmaya hazır, temiz bir görüntü** olarak 
 
 ## Özellikler
 
+- 🏟️ **3D saha:** kafesli halı saha, kaleler ve projektörlerle; fareyle/parmakla 360° döndür, tekerlek/iki parmakla veya sürgüyle yakınlaştır. Hazır kamera açıları (kale arkası, kuş bakışı, tribün), otomatik döndürme. Oyuncular 3D'de de sürüklenir, yer değiştirir; PNG o anki 3D açıyla çıkar
 - 🧩 **6'lı, 7'li ve 8'li** kadrolar, her biri için 3 hazır diziliş
 - ✋ **Sürükle-bırak:** oyuncu kaldırınca büyür, gölgesi yerden ayrılır, gidiş yönüne eğilir; bırakınca yaylı bir hareketle oturur (fare, dokunmatik ve ok tuşları). Konum diziliş başına hatırlanır
 - 🔁 **Yer değiştirme:** bir oyuncuyu diğerinin üstüne bırak, yerleri değişsin; yedek kulübesinden sahaya sürükleyerek oyuncu değiştir
@@ -73,6 +74,7 @@ tests/state.test.js    Dizilişler, sürükleme, kayıt, eski sürümden veri ta
 - **Sürükleme**, kütüphane yerine Pointer Events ile yazıldı; fare, dokunmatik ve
   kalem aynı kodla çalışır, konumlar sahaya göre yüzde olarak tutulur (ekran
   boyutundan bağımsız).
+- **3D görünüm** three.js + @react-three/fiber ile yapıldı ve ayrı bir parça olarak yalnızca 3D açıldığında indirilir; 2D kullanan için uygulama boyutu değişmez. WebGL yoksa otomatik 2D'ye döner.
 - **Depolama kotası:** localStorage ~5 MB'tır. Fotoğraflar küçültülmeden
   kaydedilseydi 2-3 fotoğrafta dolardı; kota yine de dolarsa kullanıcı uyarılır.
 - **Geriye uyumluluk:** ilk sürümün (`halisaha_players`) verisi otomatik taşınır.
