@@ -24,7 +24,7 @@ bir dakikada kurulur ve **gruba atılmaya hazır, temiz bir görüntü** olarak 
 
 ## Özellikler
 
-- 🏟️ **3D saha:** kafesli halı saha, kaleler ve projektörlerle; fareyle/parmakla 360° döndür, tekerlek/iki parmakla veya sürgüyle yakınlaştır. Hazır kamera açıları (kale arkası, kuş bakışı, tribün), otomatik döndürme. Oyuncular 3D'de de sürüklenir, yer değiştirir; PNG o anki 3D açıyla çıkar
+- 🏟️ **Perspektifli saha:** paylaşılan görüntüde kafesli halı saha, kale ve ayakta duran oyuncular; 3D kütüphanesi olmadan, düz SVG ile çizilir
 - 🧩 **6'lı, 7'li ve 8'li** kadrolar, her biri için 3 hazır diziliş
 - ✋ **Sürükle-bırak:** oyuncu kaldırınca büyür, gölgesi yerden ayrılır, gidiş yönüne eğilir; bırakınca yaylı bir hareketle oturur (fare, dokunmatik ve ok tuşları). Konum diziliş başına hatırlanır
 - 🔁 **Yer değiştirme:** bir oyuncuyu diğerinin üstüne bırak, yerleri değişsin; yedek kulübesinden sahaya sürükleyerek oyuncu değiştir
@@ -49,6 +49,7 @@ npm run dev          # http://localhost:5173
 
 ```bash
 npm test             # birim testleri (vitest)
+npm run typecheck    # TypeScript kontrolü
 npm run build        # üretim derlemesi -> dist/
 ```
 
@@ -61,12 +62,15 @@ Vercel: depoyu içe aktar → Framework: **Vite** → Deploy.
 
 ```
 src/
-  App.jsx              Arayüz, paylaşma/indirme
-  components/Pitch.jsx Saha ve sürüklenebilir oyuncu
-  formations.js        6/7/8'li dizilişlerin koordinatları
-  state.js             Saf durum fonksiyonları + localStorage (test edilir)
-  image.js             Fotoğraf kırpma/küçültme
-tests/state.test.js    Dizilişler, sürükleme, kayıt, eski sürümden veri taşıma
+  App.tsx                       Ekran, sürükle-bırak mantığı, paylaşma/indirme
+  components/HalfPitch.tsx      Kadro düzenleme sahası (üstten) ve sürüklenebilir oyuncu
+  components/PerspectivePitch.tsx  Paylaşılan görüntüdeki perspektifli saha
+  lib/perspective.ts            Perspektif izdüşümü (3D kütüphanesiz)
+  formations.ts                 6/7/8'li dizilişlerin koordinatları (yarı saha, yüzde)
+  state.ts                      Saf durum fonksiyonları + localStorage (test edilir)
+  types.ts                      Ortak tipler
+tests/                          Durum, veri taşıma ve perspektif testleri
+FUTURE_UPDATES.md               MVP sonrası yapılacaklar
 ```
 
 ## Teknik notlar
@@ -74,7 +78,7 @@ tests/state.test.js    Dizilişler, sürükleme, kayıt, eski sürümden veri ta
 - **Sürükleme**, kütüphane yerine Pointer Events ile yazıldı; fare, dokunmatik ve
   kalem aynı kodla çalışır, konumlar sahaya göre yüzde olarak tutulur (ekran
   boyutundan bağımsız).
-- **3D görünüm** three.js + @react-three/fiber ile yapıldı ve ayrı bir parça olarak yalnızca 3D açıldığında indirilir; 2D kullanan için uygulama boyutu değişmez. WebGL yoksa otomatik 2D'ye döner.
+- **Perspektifli saha** gerçek bir 3D motoru yerine küçük bir izdüşüm fonksiyonuyla (`lib/perspective.ts`) düz SVG olarak çizilir. Hafiftir ve PNG dışa aktarımında ekrandakiyle birebir aynı çıkar.
 - **Depolama kotası:** localStorage ~5 MB'tır. Fotoğraflar küçültülmeden
   kaydedilseydi 2-3 fotoğrafta dolardı; kota yine de dolarsa kullanıcı uyarılır.
 - **Geriye uyumluluk:** ilk sürümün (`halisaha_players`) verisi otomatik taşınır.

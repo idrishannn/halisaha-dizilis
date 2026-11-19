@@ -1,22 +1,46 @@
 import { useRef } from 'react';
+import type { PointerEvent } from 'react';
 
 const THRESHOLD = 5; // px: bunun altı "dokunma" sayılır
+
+interface DragInfo {
+  dx: number;
+  dy: number;
+  /** Yatay hız (px/ms), yumuşatılmış */
+  vx: number;
+}
+
+interface Options {
+  onStart?: (e: PointerEvent) => void;
+  onMove?: (e: PointerEvent, info: DragInfo) => void;
+  onEnd?: (e: PointerEvent, info: { cancelled: boolean }) => void;
+  onTap?: (e: PointerEvent) => void;
+  disabled?: boolean;
+}
+
+interface Session {
+  x0: number;
+  y0: number;
+  lx: number;
+  lt: number;
+  vx: number;
+  active: boolean;
+}
 
 /**
  * Fare ve dokunmatik için tek sürükleme mantığı.
  * Küçük hareket = dokunma (onTap), eşik aşılırsa onStart → onMove* → onEnd.
- * onMove yatay hızı (px/ms) da verir; token bunu eğilme efekti için kullanır.
  */
-export function usePointerDrag({ onStart, onMove, onEnd, onTap, disabled }) {
-  const s = useRef(null);
+export function usePointerDrag({ onStart, onMove, onEnd, onTap, disabled }: Options) {
+  const s = useRef<Session | null>(null);
 
-  const onPointerDown = (e) => {
+  const onPointerDown = (e: PointerEvent) => {
     if (disabled || (e.pointerType === 'mouse' && e.button !== 0)) return;
     s.current = { x0: e.clientX, y0: e.clientY, lx: e.clientX, lt: e.timeStamp, vx: 0, active: false };
-    e.currentTarget.setPointerCapture(e.pointerId);
+    (e.currentTarget as Element).setPointerCapture(e.pointerId);
   };
 
-  const onPointerMove = (e) => {
+  const onPointerMove = (e: PointerEvent) => {
     const d = s.current;
     if (!d) return;
     const dx = e.clientX - d.x0;
@@ -34,7 +58,7 @@ export function usePointerDrag({ onStart, onMove, onEnd, onTap, disabled }) {
     onMove?.(e, { dx, dy, vx: d.vx });
   };
 
-  const finish = (e, cancelled) => {
+  const finish = (e: PointerEvent, cancelled: boolean) => {
     const d = s.current;
     s.current = null;
     if (!d) return;
@@ -45,12 +69,12 @@ export function usePointerDrag({ onStart, onMove, onEnd, onTap, disabled }) {
   return {
     onPointerDown,
     onPointerMove,
-    onPointerUp: (e) => finish(e, false),
-    onPointerCancel: (e) => finish(e, true),
+    onPointerUp: (e: PointerEvent) => finish(e, false),
+    onPointerCancel: (e: PointerEvent) => finish(e, true),
   };
 }
 
-export const haptic = (pattern) => {
+export const haptic = (pattern: number | number[]) => {
   try {
     navigator.vibrate?.(pattern);
   } catch {
